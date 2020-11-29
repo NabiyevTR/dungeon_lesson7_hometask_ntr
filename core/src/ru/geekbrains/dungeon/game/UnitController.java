@@ -24,6 +24,10 @@ public class UnitController {
         return currentUnit == unit;
     }
 
+    public  boolean isHeroTurn() {
+        return currentUnit.getType() == Unit.UnitType.HERO;
+    }
+
     public boolean isCellFree(int cellX, int cellY) {
         for (int i = 0; i < allUnits.size(); i++) {
             Unit u = allUnits.get(i);
