@@ -17,4 +17,12 @@ public class Weapon {
         this.damage = damage;
         this.radius = radius;
     }
+
+    public int getTypeNumber() {
+        return type.ordinal();
+    }
+
+    public  String toString() {
+        return (type.toString());
+    }
 }

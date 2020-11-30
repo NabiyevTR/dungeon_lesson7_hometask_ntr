@@ -15,18 +15,20 @@ public class GameMap {
         NONE, GOLD
     }
 
+
     private class Cell {
         CellType type;
 
         DropType dropType;
         int dropPower;
-
+        public int stepCost;
         int index;
 
         public Cell() {
             type = CellType.GRASS;
             dropType = DropType.NONE;
             index = 0;
+            stepCost = 1;
         }
 
         public void changeType(CellType to) {
@@ -35,12 +37,14 @@ public class GameMap {
                 index = MathUtils.random(4);
             }
         }
+
     }
 
     public static final int CELLS_X = 22;
     public static final int CELLS_Y = 12;
     public static final int CELL_SIZE = 60;
     public static final int FOREST_PERCENTAGE = 5;
+    public static final int HARD_STEPS_COST_PERCENTAGE = 10;
 
     public int getCellsX() {
         return CELLS_X;
@@ -68,10 +72,18 @@ public class GameMap {
 
         }
 
+        // 2. Добавьте клеткам стоимость перехода и подшейте это к логике юнитов
+        int hardStepsCount = (int) ((CELLS_X * CELLS_Y * HARD_STEPS_COST_PERCENTAGE) / 100.0f);
+        for (int i = 0; i < hardStepsCount; i++) {
+            this.data[MathUtils.random(0, CELLS_X - 1)][MathUtils.random(0, CELLS_Y - 1)].stepCost = 2;
+
+        }
+
         this.grassTexture = Assets.getInstance().getAtlas().findRegion("grass");
         this.goldTexture = Assets.getInstance().getAtlas().findRegion("chest").split(60, 60)[0][0];
         this.treesTextures = Assets.getInstance().getAtlas().findRegion("trees").split(60, 90)[0];
     }
+
 
     public boolean isCellPassable(int cx, int cy) {
         if (cx < 0 || cx > getCellsX() - 1 || cy < 0 || cy > getCellsY() - 1) {
@@ -86,7 +98,13 @@ public class GameMap {
     public void render(SpriteBatch batch) {
         for (int i = 0; i < CELLS_X; i++) {
             for (int j = CELLS_Y - 1; j >= 0; j--) {
+
+                // 3. На карте случайно разместите сколько-то клеток стоимость 2, при
+                // отрисовке их можно сделать более темными  +
+                if (data[i][j].stepCost == 2) batch.setColor(0.5f, 0.5f, 0.5f, 1.0f);
                 batch.draw(grassTexture, i * CELL_SIZE, j * CELL_SIZE);
+                batch.setColor(1.0f, 1.0f, 1.0f, 1.0f);
+
                 if (data[i][j].type == CellType.TREE) {
                     batch.draw(treesTextures[data[i][j].index], i * CELL_SIZE, j * CELL_SIZE);
                 }
@@ -125,4 +143,10 @@ public class GameMap {
         currentCell.dropType = DropType.NONE;
         currentCell.dropPower = 0;
     }
+
+    public int getGetCellStepCost(int cx, int cy) {
+        return data[cx][cy].stepCost;
+    }
+
+
 }

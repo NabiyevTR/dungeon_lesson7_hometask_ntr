@@ -1,14 +1,13 @@
 package ru.geekbrains.dungeon.game.units;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.MathUtils;
 import lombok.Data;
-import ru.geekbrains.dungeon.game.BattleCalc;
-import ru.geekbrains.dungeon.game.GameController;
-import ru.geekbrains.dungeon.game.GameMap;
-import ru.geekbrains.dungeon.game.Weapon;
+import ru.geekbrains.dungeon.game.*;
 import ru.geekbrains.dungeon.helpers.Assets;
 import ru.geekbrains.dungeon.helpers.Poolable;
 
@@ -56,6 +55,7 @@ public abstract class Unit implements Poolable {
     float movementMaxTime;
     int targetX, targetY;
     Weapon weapon;
+    Armour armour;
 
     float innerTimer;
     StringBuilder stringHelper;
@@ -63,6 +63,10 @@ public abstract class Unit implements Poolable {
 
     float timePerFrame;
     float walkingTime;
+
+    public enum UnitType {HERO, MONSTER}
+
+    UnitType type;
 
     public Unit(GameController gc, int cellX, int cellY, int hpMax, String textureName) {
         this.gc = gc;
@@ -122,7 +126,8 @@ public abstract class Unit implements Poolable {
         if (!gc.getGameMap().isCellPassable(argCellX, argCellY) || !gc.getUnitController().isCellFree(argCellX, argCellY)) {
             return;
         }
-        if (stats.movePoints > 0 && Math.abs(argCellX - cellX) + Math.abs(argCellY - cellY) == 1) {
+        if (stats.movePoints >= gc.getGameMap().getGetCellStepCost(argCellX, argCellY)
+                && Math.abs(argCellX - cellX) + Math.abs(argCellY - cellY) == 1) {
             targetX = argCellX;
             targetY = argCellY;
             currentDirection = Direction.getMoveDirection(cellX, cellY, targetX, targetY);
@@ -152,7 +157,8 @@ public abstract class Unit implements Poolable {
                 movementTime = 0;
                 cellX = targetX;
                 cellY = targetY;
-                stats.movePoints--;
+                // 2. Добавьте клеткам стоимость перехода и подшейте это к логике юнитов +
+                stats.movePoints -= gc.getGameMap().getGetCellStepCost(cellX, cellY);
                 gc.getGameMap().checkAndTakeDrop(this);
             }
         }
@@ -191,11 +197,26 @@ public abstract class Unit implements Poolable {
             stringHelper.append("MP: ").append(stats.movePoints).append(" AP: ").append(stats.attackPoints);
             font18.draw(batch, stringHelper, barX, barY + 80, 60, 1, false);
         }
+
+        // 4. При наведении на персонажей, показывать их характеристики
+        if (gc.getUnitController().isHeroTurn() && type != UnitType.HERO &&
+                gc.getCursorX() == cellX && gc.getCursorY() == cellY) {
+            stringHelper.setLength(0);
+            stringHelper.append("W: ").append(weapon).append(" A: ").append(armour);
+            font18.draw(batch, stringHelper, barX, barY + 80, 60, 1, false);
+        }
+
+
         batch.setColor(1.0f, 1.0f, 1.0f, 1.0f);
     }
 
 
     public boolean amIBlocked() {
-        return !(gc.isCellEmpty(cellX - 1, cellY) || gc.isCellEmpty(cellX + 1, cellY) || gc.isCellEmpty(cellX, cellY - 1) || gc.isCellEmpty(cellX, cellY + 1));
+        return !(gc.isCellAvailable(cellX - 1, cellY, stats.movePoints) ||
+                gc.isCellAvailable(cellX + 1, cellY, stats.movePoints) ||
+                gc.isCellAvailable(cellX, cellY - 1, stats.movePoints) ||
+                gc.isCellAvailable(cellX, cellY + 1, stats.movePoints));
     }
+
+
 }

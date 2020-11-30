@@ -9,6 +9,7 @@ import ru.geekbrains.dungeon.screens.ScreenManager;
 
 @Data
 public class GameController {
+
     public static final int INITIAL_MONSTERS_COUNT = 3;
     public static final int TURNS_COUNT = 5;
 
@@ -44,6 +45,11 @@ public class GameController {
 
     public boolean isCellEmpty(int cx, int cy) {
         return gameMap.isCellPassable(cx, cy) && unitController.isCellFree(cx, cy);
+    }
+
+    // 2. Добавьте клеткам стоимость перехода и подшейте это к логике юнитов +
+    public boolean isCellAvailable(int cx, int cy, int movePointsLeft) {
+        return isCellEmpty(cx, cy) && gameMap.getGetCellStepCost(cx, cy) <= movePointsLeft;
     }
 
     public void update(float dt) {
